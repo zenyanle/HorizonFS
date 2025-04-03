@@ -17,6 +17,7 @@ package raft
 import (
 	"log"
 
+	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/raft/v3/raftpb"
 )
 

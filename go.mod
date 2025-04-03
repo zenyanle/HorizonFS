@@ -1,4 +1,4 @@
-module raftexample
+module HorizonFS
 
 // Consider updating the Go version if your toolchain supports it, e.g., go 1.21 or 1.22
 go 1.23.0
@@ -32,6 +32,8 @@ require (
 	golang.org/x/time v0.11.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 )
+
+require github.com/sirupsen/logrus v1.9.3
 
 require (
 	github.com/coreos/go-semver v0.3.0 // indirect
