@@ -49,7 +49,7 @@ func (s *DataNode) UploadData(stream grpc.BidiStreamingServer[proto.DataChunk, p
 
 	var uploadErr error = nil
 
-	fp := kvstore.NewFileProcessor(handshakeData.FileName, handshakeData.ChunkTotal, handshakeData.FileSize, &uploadErr, &wg)
+	fp := kvstore.NewFileProcessor(handshakeData.FileName, handshakeData.ChunkTotal, handshakeData.FileSize, &uploadErr, &wg, s.Kv)
 
 	for {
 		msg, err := stream.Recv()

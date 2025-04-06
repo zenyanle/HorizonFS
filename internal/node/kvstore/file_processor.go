@@ -2,9 +2,6 @@ package kvstore
 
 import (
 	"HorizonFS/pkg/logger"
-	"fmt"
-	"os"
-	"path/filepath"
 	"sync"
 	"sync/atomic"
 )
@@ -31,10 +28,12 @@ type FileProcessor struct {
 	wg *sync.WaitGroup
 
 	Once *sync.Once
+
+	Kv *BadgerStore
 }
 
 // NewFileProcessor 创建新的文件处理器
-func NewFileProcessor(fileName string, totalChunks int32, fileSize int64, uploadErr *error, wg *sync.WaitGroup) *FileProcessor {
+func NewFileProcessor(fileName string, totalChunks int32, fileSize int64, uploadErr *error, wg *sync.WaitGroup, kv *BadgerStore) *FileProcessor {
 	return &FileProcessor{
 		fileName:    fileName,
 		totalChunks: totalChunks,
@@ -43,6 +42,7 @@ func NewFileProcessor(fileName string, totalChunks int32, fileSize int64, upload
 		uploadErr:   *uploadErr,
 		wg:          wg,
 		Once:        &sync.Once{},
+		Kv:          kv,
 	}
 }
 
@@ -85,57 +85,18 @@ func (fp *FileProcessor) ProcessChunk(chunkIndex int, data []byte) {
 func (fp *FileProcessor) WriteToFile() {
 	defer fp.Once.Do(fp.wg.Done)
 
-	logger.Info("创建文件了")
-	path := filepath.Join("test", "downloaded", fp.fileName)
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		fp.uploadErr = err
-		logger.Errorf("failed to create file %s: %v", fp.fileName, err)
-		return
-	}
-	defer func() {
-		cerr := file.Close()
-		if cerr != nil {
-			fp.uploadErr = cerr
-			logger.Error(cerr)
-		}
-	}()
-
-	if err := file.Truncate(fp.fileSize); err != nil {
-		fp.uploadErr = err
-		logger.Errorf("failed to truncate file %s: %v", fp.fileName, err)
-		return
-	}
-	logger.Info("在写文件了")
-	logger.Info("总分片： ", fp.totalChunks)
-	// 跟踪写入位置
-	var offset int64 = 0
-
-	// 按顺序写入分片
+	tmp := make([]byte, fp.fileSize)
+	offset := 0
 	for i := 0; i < int(fp.totalChunks); i++ {
-		fp.mu.RLock()
-		chunk, ok := fp.chunks[i]
-		fp.mu.RUnlock()
-		// logger.Info(offset)
-		if !ok {
-			logger.Info("OK断点")
-			fp.uploadErr = fmt.Errorf("missing chunk %d for file %s", i, fp.fileName)
-			logger.Errorf("missing chunk %d for file %s", i, fp.fileName)
-			return
-		}
+		chunk := fp.chunks[i]
+		copy(tmp[offset:], chunk)
+		offset += len(chunk)
+	}
 
-		//logger.Infof("%x", chunk)
-
-		// 使用当前offset写入
-		if _, err := file.WriteAt(chunk, offset); err != nil {
-			fp.uploadErr = err
-			logger.Errorf("failed to write chunk %d: %v", i, err)
-			return
-		}
-		// logger.Info("offset更新点")
-		// 更新offset
-		offset += int64(len(chunk))
-		// logger.Info(offset)
+	err := fp.Kv.SetValue(fp.fileName, tmp)
+	if err != nil {
+		logger.Error("kv set error ", err)
+		return
 	}
 
 	// 清理并通知完成
