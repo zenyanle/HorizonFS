@@ -3,7 +3,7 @@ syntax = "proto3";
 package proto;
 
 // Make sure this matches your actual Go module path for the proto package
-option go_package = "HorizonFS/pkg/proto"; // Example: replace HorizonFS with your project's module path
+option go_package = "/pkg/proto"; // Example: replace HorizonFS with your project's module path
 
 // Represents the information stored per file/key in the metastore
 message ChunkInfo {
