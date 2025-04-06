@@ -1,9 +1,8 @@
 package client
 
 import (
-	"Gat/file_processor"
-	"Gat/proto"
 	"HorizonFS/pkg/logger"
+	"HorizonFS/pkg/proto"
 	"context"
 	"fmt"
 	"google.golang.org/grpc"
@@ -19,16 +18,16 @@ const (
 	ChunkSize = 64 * 1024
 )
 
-// TransferClient 用于处理与TransferService的连接
-type TransferClient struct {
+// DataNodeClient 用于处理与TransferService的连接
+type DataNodeClient struct {
 	conn   *grpc.ClientConn
-	client proto.TransfrServiceClient
+	client proto.DataNodeServiceClient
 	ctx    context.Context
 	cancel context.CancelFunc
 }
 
-// NewTransferClient 创建一个新的客户端连接到传输服务
-func NewTransferClient(serverAddr string) (*TransferClient, error) {
+// NewDataNodeClient 创建一个新的客户端连接到传输服务
+func NewDataNodeClient(serverAddr string) (*DataNodeClient, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 
 	conn, err := grpc.NewClient(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -37,9 +36,9 @@ func NewTransferClient(serverAddr string) (*TransferClient, error) {
 		return nil, fmt.Errorf("连接服务器失败: %v", err)
 	}
 
-	client := proto.NewTransfrServiceClient(conn)
+	client := proto.NewDataNodeServiceClient(conn)
 
-	return &TransferClient{
+	return &DataNodeClient{
 		conn:   conn,
 		client: client,
 		ctx:    ctx,
@@ -48,22 +47,21 @@ func NewTransferClient(serverAddr string) (*TransferClient, error) {
 }
 
 // Close 关闭客户端连接
-func (c *TransferClient) Close() {
+func (c *DataNodeClient) Close() {
 	c.cancel()
 	if c.conn != nil {
 		c.conn.Close()
 	}
 }
 
-// TransferData 发起双向流式请求以传输数据
-func (c *TransferClient) TransferData(requestID string) error {
-	stream, err := c.client.TransferData(c.ctx)
+func (c *DataNodeClient) DownloadData(requestID string) error {
+	stream, err := c.client.DownloadData(c.ctx)
 	if err != nil {
 		return fmt.Errorf("创建流失败: %v", err)
 	}
 
 	// 发送握手信息
-	err = stream.Send(&proto.TransferRequest{
+	err = stream.Send(&proto.DownloadDataRequest{
 		Request: requestID,
 	})
 	if err != nil {
@@ -84,7 +82,7 @@ func (c *TransferClient) TransferData(requestID string) error {
 	}
 
 	// 使用file_processor处理文件
-	fp := file_processor.NewFileProcessor(chunk.FileName, chunk.ChunkTotal, chunk.FileSize, &uploadErr, &wg)
+	fp := NewFileProcessor(chunk.FileName, chunk.ChunkTotal, chunk.FileSize, &uploadErr, &wg)
 
 	// 处理第一个块
 	payloadCopy := make([]byte, len(chunk.Payload))
@@ -134,7 +132,7 @@ func (c *TransferClient) TransferData(requestID string) error {
 }
 
 // UploadData 上传文件到服务器
-func (c *TransferClient) UploadData(filePath string) error {
+func (c *DataNodeClient) UploadData(filePath string) error {
 	// 打开文件
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -263,7 +261,7 @@ func (c *TransferClient) UploadData(filePath string) error {
 }
 
 // UploadDataFromReader 从Reader上传数据到服务器
-func (c *TransferClient) UploadDataFromReader(reader io.Reader, fileName string, fileSize int64) error {
+func (c *DataNodeClient) UploadDataFromReader(reader io.Reader, fileName string, fileSize int64) error {
 	// 计算总块数
 	chunkTotal := int32(math.Ceil(float64(fileSize) / float64(ChunkSize)))
 
