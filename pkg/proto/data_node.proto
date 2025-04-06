@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/pkg/proto";
+
+service DataNodeService {
+  rpc DownloadData (stream DownloadDataRequest) returns (stream DataChunk);
+  rpc UploadData (stream DataChunk) returns (stream UploadDataResponse);
+}
+
+message DownloadDataRequest {
+  string request = 1;
+}
+
+// 数据分片信息
+message DataChunk {
+  string file_name = 1;
+  int32 chunk_total = 2;
+  int32 chunk_id = 3;            // 当前分片 ID（从1开始）
+  bytes payload = 4;             // 实际数据负载
+  int64 file_size = 5;
+}
+
+message UploadDataResponse {
+  string response = 1;
+}

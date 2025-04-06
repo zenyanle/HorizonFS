@@ -15,10 +15,10 @@
 package raft
 
 import (
+	log "HorizonFS/pkg/logger"
 	"context"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/snap"
 	"go.etcd.io/etcd/server/v3/wal"
-	"log"
 	"os"
 	"strconv"
 	"time"

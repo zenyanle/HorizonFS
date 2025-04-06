@@ -89,3 +89,13 @@ func Panic(args ...interface{}) {
 func Panicf(format string, args ...interface{}) {
 	logrus.Panicf(format, args...)
 }
+
+// Info 记录 Info 级别的日志
+func Println(args ...interface{}) {
+	logrus.Info(args...)
+}
+
+// Infof 记录 Info 级别的格式化日志
+func Printf(format string, args ...interface{}) {
+	logrus.Infof(format, args...)
+}

@@ -15,9 +15,9 @@
 package raft
 
 import (
+	log "HorizonFS/pkg/logger"
 	"context"
 	"errors"
-	"log"
 	"net"
 	"net/http"
 	"net/url"

@@ -15,7 +15,7 @@
 package raft
 
 import (
-	"log"
+	log "HorizonFS/pkg/logger"
 
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/raft/v3/raftpb"
