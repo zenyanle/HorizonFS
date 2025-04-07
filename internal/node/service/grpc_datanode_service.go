@@ -18,7 +18,7 @@ type DataNodeService struct {
 	Kv *kvstore.BadgerStore
 }
 
-func (s *DataNodeService) TransferData(stream grpc.BidiStreamingServer[proto.DownloadDataRequest, proto.DataChunk]) error {
+func (s *DataNodeService) DownloadData(stream grpc.BidiStreamingServer[proto.DownloadDataRequest, proto.DataChunk]) error {
 	handshakeData, err := stream.Recv()
 	if err != nil {
 		logger.Error("handshake error ", err)

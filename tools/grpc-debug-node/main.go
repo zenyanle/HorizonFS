@@ -43,7 +43,7 @@ func main() {
 		Store: kvs,
 	}
 
-	kv, err := kvstore.NewBadgerStore(filepath.Join("storage", "test.db"))
+	kv, err := kvstore.NewBadgerStore(filepath.Join("storage", strconv.Itoa(*id)+"test.db"))
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func main() {
 	proto.RegisterMetadataServiceServer(grpcServer, metadataService)
 	proto.RegisterDataNodeServiceServer(grpcServer, datanodeService)
 
-	logger.Println("Server is running on :50051")
+	logger.Printf("Server is running on :%d", *kvport)
 	if err := grpcServer.Serve(lis); err != nil {
 		logger.Fatalf("Failed to serve: %v", err)
 	}
