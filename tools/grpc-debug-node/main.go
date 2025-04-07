@@ -10,13 +10,14 @@ import (
 	"go.etcd.io/etcd/raft/v3/raftpb"
 	"google.golang.org/grpc"
 	"net"
+	"strconv"
 	"strings"
 )
 
 func main() {
 	cluster := flag.String("cluster", "http://127.0.0.1:9021", "comma separated cluster peers")
 	id := flag.Int("id", 1, "node ID")
-	// kvport := flag.Int("port", 9121, "key-value server port")
+	kvport := flag.Int("port", 9121, "key-value server port")
 	join := flag.Bool("join", false, "join an existing cluster")
 	flag.Parse()
 
@@ -40,7 +41,7 @@ func main() {
 		Store: kvs,
 	}
 
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", ":"+strconv.Itoa(*kvport))
 	if err != nil {
 		logger.Fatal(err)
 	}
