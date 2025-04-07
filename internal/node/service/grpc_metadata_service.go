@@ -27,7 +27,7 @@ func NewMetadataService(store *metadata.Metastore) *MetadataService {
 
 func (s *MetadataService) ProposeSet(ctx context.Context, req *proto.ProposeSetRequest) (*proto.ProposeSetResponse, error) {
 	// 1. 输入参数校验
-	if req.Key != "" {
+	if req.Key == "" {
 		logger.Warn("ProposeSet 请求空了")
 		return nil, status.Error(codes.InvalidArgument, "元数据键 (key) 不能为空")
 	}
