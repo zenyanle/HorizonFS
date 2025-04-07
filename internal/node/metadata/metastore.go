@@ -89,7 +89,7 @@ func (s *Metastore) readCommits(commitC <-chan *types.Commit, errorC <-chan erro
 			log.Println("commit")
 
 			switch dataKv.Action {
-			case "PUT":
+			case "SET":
 				val, err := deserializeChunkInfo(dataKv.Val)
 				if err != nil {
 					log.Println(dataKv.Val)
@@ -97,8 +97,8 @@ func (s *Metastore) readCommits(commitC <-chan *types.Commit, errorC <-chan erro
 				}
 				s.mu.Lock()
 				s.metadataStore[dataKv.Key] = val
-				log.Printf("v: %+v\n", val)
 				s.mu.Unlock()
+				log.Printf("v: %+v\n", val)
 
 			case "DEL":
 				s.mu.Lock()

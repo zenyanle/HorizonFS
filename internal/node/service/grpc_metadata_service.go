@@ -13,7 +13,7 @@ import (
 type MetadataService struct {
 	proto.UnimplementedMetadataServiceServer
 
-	store *metadata.Metastore
+	Store *metadata.Metastore
 }
 
 // NewMetadataService 创建 MetadataService 的 gRPC 服务器实例
@@ -21,7 +21,7 @@ type MetadataService struct {
 func NewMetadataService(store *metadata.Metastore) *MetadataService {
 
 	return &MetadataService{
-		store: store, // 将传入的 metastore 实例赋值给服务器
+		Store: store, // 将传入的 metastore 实例赋值给服务器
 	}
 }
 
@@ -47,7 +47,7 @@ func (s *MetadataService) ProposeSet(ctx context.Context, req *proto.ProposeSetR
 		return nil, status.Errorf(codes.Internal, "序列化元数据值失败: %v", err)
 	}
 
-	err = s.store.Propose(ctx, "SET", req.Key, string(valueBytes))
+	err = s.Store.Propose(ctx, "SET", req.Key, string(valueBytes))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "超时: %v", err)
 	}
@@ -62,7 +62,7 @@ func (s *MetadataService) GetMetadata(ctx context.Context, req *proto.GetMetadat
 
 	logger.Info("收到 GetMetadata 请求")
 
-	internalValue, found := s.store.Lookup(req.Key)
+	internalValue, found := s.Store.Lookup(req.Key)
 
 	if !found {
 		logger.Info("GetMetadata 未找到 key")
@@ -88,7 +88,7 @@ func (s *MetadataService) ProposeDelete(ctx context.Context, req *proto.ProposeD
 
 	logger.Info("收到 ProposeDelete 请求")
 
-	err := s.store.Propose(ctx, "DEL", req.Key, "")
+	err := s.Store.Propose(ctx, "DEL", req.Key, "")
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "超时: %v", err)
 	}
