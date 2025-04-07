@@ -1,6 +1,7 @@
 package main
 
 import (
+	"HorizonFS/internal/node/kvstore"
 	"HorizonFS/internal/node/metadata"
 	"HorizonFS/internal/node/raft"
 	"HorizonFS/internal/node/service"
@@ -10,6 +11,7 @@ import (
 	"go.etcd.io/etcd/raft/v3/raftpb"
 	"google.golang.org/grpc"
 	"net"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -41,12 +43,23 @@ func main() {
 		Store: kvs,
 	}
 
+	kv, err := kvstore.NewBadgerStore(filepath.Join("storage", "test.db"))
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	datanodeService := &service.DataNodeService{
+		Kv: kv,
+	}
+
 	lis, err := net.Listen("tcp", ":"+strconv.Itoa(*kvport))
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	proto.RegisterMetadataServiceServer(grpcServer, metadataService)
+	proto.RegisterDataNodeServiceServer(grpcServer, datanodeService)
+
 	logger.Println("Server is running on :50051")
 	if err := grpcServer.Serve(lis); err != nil {
 		logger.Fatalf("Failed to serve: %v", err)

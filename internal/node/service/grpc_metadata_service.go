@@ -16,14 +16,14 @@ type MetadataService struct {
 	Store *metadata.Metastore
 }
 
-// NewMetadataService 创建 MetadataService 的 gRPC 服务器实例
+/*// NewMetadataService 创建 MetadataService 的 gRPC 服务器实例
 // 参数需要传入你的元数据存储/Raft交互实例
 func NewMetadataService(store *metadata.Metastore) *MetadataService {
 
 	return &MetadataService{
 		Store: store, // 将传入的 metastore 实例赋值给服务器
 	}
-}
+}*/
 
 func (s *MetadataService) ProposeSet(ctx context.Context, req *proto.ProposeSetRequest) (*proto.ProposeSetResponse, error) {
 	// 1. 输入参数校验
