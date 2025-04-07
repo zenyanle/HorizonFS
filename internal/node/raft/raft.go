@@ -24,14 +24,12 @@ import (
 	"go.etcd.io/etcd/server/v3/etcdserver/api/snap"
 	"go.etcd.io/etcd/server/v3/wal"
 
+	"HorizonFS/internal/node/types"
 	"go.uber.org/zap"
 )
 
 // commit 表示已提交的数据条目
-type commit struct {
-	data       []string
-	applyDoneC chan<- struct{}
-}
+type commit = types.Commit
 
 // raftNode 表示一个由raft支持的键值流
 type raftNode struct {

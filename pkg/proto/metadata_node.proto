@@ -5,7 +5,7 @@ package proto;
 // Make sure this matches your actual Go module path for the proto package
 option go_package = "/pkg/proto"; // Example: replace HorizonFS with your project's module path
 
-// Represents the information stored per file/key in the metastore
+// Represents the information stored per file/key in the Metastore
 message ChunkInfo {
   string chunk_id = 1;        // Unique identifier for the chunk (could be filename + sequence, or hash)
   string chunk_location = 2;  // Node address (e.g., "host:port") or identifier where the chunk resides

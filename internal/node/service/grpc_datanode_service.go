@@ -2,7 +2,7 @@ package service
 
 import (
 	"HorizonFS/internal/node/kvstore"
-	"HorizonFS/internal/types"
+	"HorizonFS/internal/node/types"
 	"HorizonFS/pkg/logger"
 	"HorizonFS/pkg/proto"
 	"fmt"
@@ -13,12 +13,12 @@ import (
 	"time"
 )
 
-type DataNode struct {
+type DataNodeService struct {
 	proto.UnimplementedDataNodeServiceServer
 	Kv *kvstore.BadgerStore
 }
 
-func (s *DataNode) TransferData(stream grpc.BidiStreamingServer[proto.DownloadDataRequest, proto.DataChunk]) error {
+func (s *DataNodeService) TransferData(stream grpc.BidiStreamingServer[proto.DownloadDataRequest, proto.DataChunk]) error {
 	handshakeData, err := stream.Recv()
 	if err != nil {
 		logger.Error("handshake error ", err)
@@ -33,7 +33,7 @@ func (s *DataNode) TransferData(stream grpc.BidiStreamingServer[proto.DownloadDa
 	return nil
 }
 
-func (s *DataNode) UploadData(stream grpc.BidiStreamingServer[proto.DataChunk, proto.UploadDataResponse]) error {
+func (s *DataNodeService) UploadData(stream grpc.BidiStreamingServer[proto.DataChunk, proto.UploadDataResponse]) error {
 	handshakeData, err := stream.Recv()
 	if err != nil {
 		logger.Error("handshake error ", err)

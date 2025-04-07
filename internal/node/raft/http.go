@@ -18,22 +18,22 @@ import (
 	log "HorizonFS/pkg/logger"
 	"context"
 	"errors"
+	"go.etcd.io/etcd/raft/v3/raftpb"
 	"net"
 	"net/http"
 	"net/url"
 
 	"go.etcd.io/etcd/raft/v3"
-	"go.etcd.io/etcd/raft/v3/raftpb"
 )
 
 // serveRaft 启动一个HTTP服务器处理raft消息
 func (rc *raftNode) serveRaft() {
-	url, err := url.Parse(rc.peers[rc.id-1])
+	url_, err := url.Parse(rc.peers[rc.id-1])
 	if err != nil {
 		log.Fatalf("raftexample: 解析URL失败 (%v)", err)
 	}
 
-	ln, err := newStoppableListener(url.Host, rc.httpstopc)
+	ln, err := newStoppableListener(url_.Host, rc.httpstopc)
 	if err != nil {
 		log.Fatalf("raftexample: 监听rafthttp失败 (%v)", err)
 	}
