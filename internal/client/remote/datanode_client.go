@@ -1,7 +1,7 @@
 package remote
 
 import (
-	"HorizonFS/internal/client/storage"
+	"HorizonFS/internal/client/store"
 	"HorizonFS/pkg/logger"
 	"HorizonFS/pkg/proto"
 	"context"
@@ -83,7 +83,7 @@ func (c *DataNodeClient) DownloadData(requestID string) error {
 	}
 
 	// 使用file_processor处理文件
-	fp := storage.NewFileProcessor(chunk.FileName, chunk.ChunkTotal, chunk.FileSize, &uploadErr, &wg)
+	fp := store.NewFileProcessor(chunk.FileName, chunk.ChunkTotal, chunk.FileSize, &uploadErr, &wg)
 
 	// 处理第一个块
 	payloadCopy := make([]byte, len(chunk.Payload))
