@@ -2,60 +2,68 @@ syntax = "proto3";
 
 package proto;
 
-// Make sure this matches your actual Go module path for the proto package
-option go_package = "/pkg/proto"; // Example: replace HorizonFS with your project's module path
+option go_package = "/pkg/proto";
 
-// Represents the information stored per file/key in the Metastore
 message ChunkInfo {
-  string chunk_id = 1;        // Unique identifier for the chunk (could be filename + sequence, or hash)
-  string chunk_location = 2;  // Node address (e.g., "host:port") or identifier where the chunk resides
-  string chunk_status = 3;    // Status like "available", "replicating", "lost" etc. (optional)
-  // Add other relevant fields if needed, like size, hash, creation time...
+  string chunk_id = 1;
+  string chunk_location = 2;
+  string chunk_status = 3;
 }
 
-// Service definition for metadata operations
+message FileMetadata {
+  string key = 1;
+  repeated ChunkInfo chunks = 2; // <-- 这里是关键
+  int64 file_size = 3;
+}
+
 service MetadataService {
-  // Propose setting/updating metadata for a key
   rpc ProposeSet (ProposeSetRequest) returns (ProposeSetResponse);
 
-  // Get metadata for a specific key
   rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse);
 
-  // Propose deleting metadata for a key
   rpc ProposeDelete (ProposeDeleteRequest) returns (ProposeDeleteResponse);
 
+  rpc GetFileMetadata (GetFileMetadataRequest) returns (GetFileMetadataResponse);
 }
 
-// == Request/Response Messages ==
-
-// --- ProposeSet ---
 message ProposeSetRequest {
-  string key = 1;       // The key (e.g., filename) for the metadata
-  ChunkInfo value = 2;  // The metadata value to set
+  string key = 1;
+  uint64 index = 2;
+  ChunkInfo value = 3;
 }
 
 message ProposeSetResponse {
-  bool success = 1;     // Indicates if the proposal was accepted by the node (doesn't guarantee commit yet)
-  string error_message = 2; // Optional error details
+  bool success = 1;
+  string error_message = 2;
 }
 
-// --- GetMetadata ---
 message GetMetadataRequest {
-  string key = 1;       // The key (e.g., filename) to retrieve
+  string key = 1;
+  int64 index = 2;
 }
 
 message GetMetadataResponse {
-  ChunkInfo value = 1;  // The retrieved metadata
-  bool found = 2;       // True if the key was found
-  string error_message = 3; // Optional error details (e.g., key not found)
+  ChunkInfo value = 1;
+  bool found = 2;
+  string error_message = 3;
 }
 
-// --- ProposeDelete ---
 message ProposeDeleteRequest {
-  string key = 1;       // The key (e.g., filename) to delete
+  string key = 1;
+  int64 index = 2;
 }
 
 message ProposeDeleteResponse {
-  bool success = 1;     // Indicates if the proposal was accepted by the node
-  string error_message = 2; // Optional error details
+  bool success = 1;
+  string error_message = 2;
+}
+
+message GetFileMetadataRequest {
+  string key = 1;
+}
+
+message GetFileMetadataResponse {
+  FileMetadata metadata = 1; // <-- 接收包含 repeated 字段的消息
+  bool found = 2;
+  string error_message = 3;
 }

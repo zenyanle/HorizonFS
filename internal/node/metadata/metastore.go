@@ -12,14 +12,14 @@ import (
 )
 
 type Metastore struct {
-	metadataStore map[string]ChunkInfo
+	metadataStore map[string][]ChunkInfo
 	proposeC      chan<- string
 	mu            sync.RWMutex
 	snapshotter   *snap.Snapshotter
 }
 
 func NewMetaSore(snapshotter *snap.Snapshotter, proposeC chan<- string, commitC <-chan *types.Commit, errorC <-chan error) *Metastore {
-	s := &Metastore{proposeC: proposeC, metadataStore: make(map[string]ChunkInfo), snapshotter: snapshotter}
+	s := &Metastore{proposeC: proposeC, metadataStore: make(map[string][]ChunkInfo), snapshotter: snapshotter}
 	snapshot, err := s.loadSnapshot()
 	if err != nil {
 		log.Panic(err)
@@ -35,7 +35,7 @@ func NewMetaSore(snapshotter *snap.Snapshotter, proposeC chan<- string, commitC 
 	return s
 }
 
-func (s *Metastore) Lookup(key string) (ChunkInfo, bool) {
+func (s *Metastore) Lookup(key string) ([]ChunkInfo, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	v, ok := s.metadataStore[key]
@@ -129,7 +129,7 @@ func (s *Metastore) loadSnapshot() (*raftpb.Snapshot, error) {
 }
 
 func (s *Metastore) recoverFromSnapshot(snapshot []byte) error {
-	var store map[string]ChunkInfo
+	var store map[string][]ChunkInfo
 	if err := json.Unmarshal(snapshot, &store); err != nil {
 		return err
 	}
