@@ -13,7 +13,7 @@ message ChunkInfo {
 message FileMetadata {
   string key = 1;
   repeated ChunkInfo chunks = 2; // <-- 这里是关键
-  int64 file_size = 3;
+  int64 total_chunks = 3;
 }
 
 service MetadataService {
@@ -28,7 +28,7 @@ service MetadataService {
 
 message ProposeSetRequest {
   string key = 1;
-  uint64 index = 2;
+  int64 index = 2;
   ChunkInfo value = 3;
 }
 

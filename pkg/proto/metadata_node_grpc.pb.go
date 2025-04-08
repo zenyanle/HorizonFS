@@ -19,23 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MetadataService_ProposeSet_FullMethodName    = "/proto.MetadataService/ProposeSet"
-	MetadataService_GetMetadata_FullMethodName   = "/proto.MetadataService/GetMetadata"
-	MetadataService_ProposeDelete_FullMethodName = "/proto.MetadataService/ProposeDelete"
+	MetadataService_ProposeSet_FullMethodName      = "/proto.MetadataService/ProposeSet"
+	MetadataService_GetMetadata_FullMethodName     = "/proto.MetadataService/GetMetadata"
+	MetadataService_ProposeDelete_FullMethodName   = "/proto.MetadataService/ProposeDelete"
+	MetadataService_GetFileMetadata_FullMethodName = "/proto.MetadataService/GetFileMetadata"
 )
 
 // MetadataServiceClient is the client API for MetadataService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// Service definition for metadata operations
 type MetadataServiceClient interface {
-	// Propose setting/updating metadata for a key
 	ProposeSet(ctx context.Context, in *ProposeSetRequest, opts ...grpc.CallOption) (*ProposeSetResponse, error)
-	// Get metadata for a specific key
 	GetMetadata(ctx context.Context, in *GetMetadataRequest, opts ...grpc.CallOption) (*GetMetadataResponse, error)
-	// Propose deleting metadata for a key
 	ProposeDelete(ctx context.Context, in *ProposeDeleteRequest, opts ...grpc.CallOption) (*ProposeDeleteResponse, error)
+	GetFileMetadata(ctx context.Context, in *GetFileMetadataRequest, opts ...grpc.CallOption) (*GetFileMetadataResponse, error)
 }
 
 type metadataServiceClient struct {
@@ -76,18 +73,24 @@ func (c *metadataServiceClient) ProposeDelete(ctx context.Context, in *ProposeDe
 	return out, nil
 }
 
+func (c *metadataServiceClient) GetFileMetadata(ctx context.Context, in *GetFileMetadataRequest, opts ...grpc.CallOption) (*GetFileMetadataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFileMetadataResponse)
+	err := c.cc.Invoke(ctx, MetadataService_GetFileMetadata_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MetadataServiceServer is the server API for MetadataService service.
 // All implementations must embed UnimplementedMetadataServiceServer
 // for forward compatibility.
-//
-// Service definition for metadata operations
 type MetadataServiceServer interface {
-	// Propose setting/updating metadata for a key
 	ProposeSet(context.Context, *ProposeSetRequest) (*ProposeSetResponse, error)
-	// Get metadata for a specific key
 	GetMetadata(context.Context, *GetMetadataRequest) (*GetMetadataResponse, error)
-	// Propose deleting metadata for a key
 	ProposeDelete(context.Context, *ProposeDeleteRequest) (*ProposeDeleteResponse, error)
+	GetFileMetadata(context.Context, *GetFileMetadataRequest) (*GetFileMetadataResponse, error)
 	mustEmbedUnimplementedMetadataServiceServer()
 }
 
@@ -106,6 +109,9 @@ func (UnimplementedMetadataServiceServer) GetMetadata(context.Context, *GetMetad
 }
 func (UnimplementedMetadataServiceServer) ProposeDelete(context.Context, *ProposeDeleteRequest) (*ProposeDeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProposeDelete not implemented")
+}
+func (UnimplementedMetadataServiceServer) GetFileMetadata(context.Context, *GetFileMetadataRequest) (*GetFileMetadataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFileMetadata not implemented")
 }
 func (UnimplementedMetadataServiceServer) mustEmbedUnimplementedMetadataServiceServer() {}
 func (UnimplementedMetadataServiceServer) testEmbeddedByValue()                         {}
@@ -182,6 +188,24 @@ func _MetadataService_ProposeDelete_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MetadataService_GetFileMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFileMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetadataServiceServer).GetFileMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetadataService_GetFileMetadata_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetadataServiceServer).GetFileMetadata(ctx, req.(*GetFileMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MetadataService_ServiceDesc is the grpc.ServiceDesc for MetadataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -200,6 +224,10 @@ var MetadataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ProposeDelete",
 			Handler:    _MetadataService_ProposeDelete_Handler,
+		},
+		{
+			MethodName: "GetFileMetadata",
+			Handler:    _MetadataService_GetFileMetadata_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

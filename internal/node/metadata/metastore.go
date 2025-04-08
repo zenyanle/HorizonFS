@@ -42,8 +42,23 @@ func (s *Metastore) Lookup(key string) ([]ChunkInfo, bool) {
 	return v, ok
 }
 
-func (s *Metastore) Propose(ctx context.Context, action string, k string, v string) error {
-	kv := types.KV{Action: action, Key: k, Val: v}
+func (s *Metastore) LookupWithIndex(index int64, key string) (ChunkInfo, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	v, ok := s.metadataStore[key]
+	if !ok {
+		return ChunkInfo{}, ok
+	}
+
+	val := v[index]
+	if (val == ChunkInfo{}) {
+		return ChunkInfo{}, false
+	}
+	return val, true
+}
+
+func (s *Metastore) Propose(ctx context.Context, action string, index int64, k string, v string) error {
+	kv := types.KV{Action: action, Index: index, Key: k, Val: v}
 	data, err := json.Marshal(kv)
 	if err != nil {
 		log.Error(err)
@@ -96,13 +111,22 @@ func (s *Metastore) readCommits(commitC <-chan *types.Commit, errorC <-chan erro
 					log.Fatal(err, "Parse error!")
 				}
 				s.mu.Lock()
-				s.metadataStore[dataKv.Key] = val
+				s.metadataStore[dataKv.Key][dataKv.Index] = val
 				s.mu.Unlock()
 				log.Printf("v: %+v\n", val)
 
 			case "DEL":
 				s.mu.Lock()
-				delete(s.metadataStore, dataKv.Key)
+				// delete(s.metadataStore, dataKv.Key)
+				v, ok := s.metadataStore[dataKv.Key]
+				if !ok {
+					log.Fatalf("%s not exsist", dataKv.Key)
+				}
+				if (v[dataKv.Index] == ChunkInfo{}) {
+					log.Fatalf("%s index not exsist", dataKv.Index)
+				}
+				v[dataKv.Index] = ChunkInfo{}
+
 				s.mu.Unlock()
 
 			default:

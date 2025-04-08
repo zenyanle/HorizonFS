@@ -47,7 +47,7 @@ func (s *MetadataService) ProposeSet(ctx context.Context, req *proto.ProposeSetR
 		return nil, status.Errorf(codes.Internal, "序列化元数据值失败: %v", err)
 	}
 
-	err = s.Store.Propose(ctx, "SET", req.Key, string(valueBytes))
+	err = s.Store.Propose(ctx, "SET", req.Index, req.Key, string(valueBytes))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "超时: %v", err)
 	}
@@ -62,7 +62,7 @@ func (s *MetadataService) GetMetadata(ctx context.Context, req *proto.GetMetadat
 
 	logger.Info("收到 GetMetadata 请求")
 
-	internalValue, found := s.Store.Lookup(req.Key)
+	internalValue, found := s.Store.LookupWithIndex(req.Index, req.Key)
 
 	if !found {
 		logger.Info("GetMetadata 未找到 key")
@@ -88,11 +88,55 @@ func (s *MetadataService) ProposeDelete(ctx context.Context, req *proto.ProposeD
 
 	logger.Info("收到 ProposeDelete 请求")
 
-	err := s.Store.Propose(ctx, "DEL", req.Key, "")
+	err := s.Store.Propose(ctx, "DEL", req.Index, req.Key, "")
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "超时: %v", err)
 	}
 	return &proto.ProposeDeleteResponse{Success: true}, nil
+}
+
+func (s *MetadataService) GetFileMetadata(ctx context.Context, req *proto.GetFileMetadataRequest) (*proto.GetFileMetadataResponse, error) {
+	if req.Key == "" {
+		logger.Warn("GetMetadata 请求缺少 key")
+		return nil, status.Error(codes.InvalidArgument, "元数据键 (key) 不能为空")
+	}
+
+	logger.Info("收到 GetMetadata 请求")
+
+	internalValue, found := s.Store.Lookup(req.Key)
+
+	if !found {
+		logger.Info("GetMetadata 未找到 key")
+		return &proto.GetFileMetadataResponse{Found: false}, nil
+	}
+
+	protoValue := convertInternalToProtoChunkInfoList(internalValue)
+	if protoValue == nil {
+		logger.Error("内部 ChunkInfo 转换到 proto 失败")
+		return nil, status.Errorf(codes.Internal, "内部数据转换失败")
+	}
+
+	logger.Info("成功获取元数据")
+	return &proto.GetFileMetadataResponse{
+		Metadata: &proto.FileMetadata{
+			Key:         req.Key,
+			Chunks:      protoValue,
+			TotalChunks: int64(len(protoValue)),
+		},
+		Found: true,
+	}, nil
+}
+
+func convertInternalToProtoChunkInfoList(internal []metadata.ChunkInfo) []*proto.ChunkInfo {
+	// 直接创建切片，长度与 internal 一致
+	mod := make([]*proto.ChunkInfo, len(internal))
+
+	// 使用索引赋值，而不是使用 append
+	for i, v := range internal {
+		mod[i] = convertInternalToProtoChunkInfo(v) // 直接赋值给切片元素
+	}
+
+	return mod
 }
 
 func convertInternalToProtoChunkInfo(internal metadata.ChunkInfo) *proto.ChunkInfo {
