@@ -2,25 +2,48 @@ package main
 
 import (
 	"HorizonFS/internal/node/kvstore"
+	"HorizonFS/internal/node/metadata"
+	"HorizonFS/internal/node/raft"
 	"HorizonFS/internal/node/service"
 	"HorizonFS/pkg/logger"
 	"HorizonFS/pkg/proto"
 	"flag"
+	"go.etcd.io/etcd/raft/v3/raftpb"
 	"google.golang.org/grpc"
 	"net"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 func main() {
-	kvport := flag.Int("port", 22380, "key-value server port")
+	cluster := flag.String("cluster", "http://127.0.0.1:9021", "comma separated cluster peers")
+	id := flag.Int("id", 1, "node ID")
+	kvport := flag.Int("port", 9121, "key-value server port")
+	join := flag.Bool("join", false, "join an existing cluster")
 	flag.Parse()
-	
+
+	proposeC := make(chan string)
+	defer close(proposeC)
+	confChangeC := make(chan raftpb.ConfChange)
+	defer close(confChangeC)
+
+	// raft provides a commit stream for the proposals from the http api
+	var kvs *metadata.Metastore
+	getSnapshot := func() ([]byte, error) { return kvs.GetSnapshot() }
+	commitC, errorC, snapshotterReady := raft.NewRaftNode(*id, strings.Split(*cluster, ","), *join, getSnapshot, proposeC, confChangeC)
+
+	kvs = metadata.NewMetaSore(<-snapshotterReady, proposeC, commitC, errorC)
+
 	// the key-value http handler will propose updates to raft
 	// serveHttpKVAPI(kvs, *kvport, confChangeC, errorC)
 	grpcServer := grpc.NewServer()
 
-	kv, err := kvstore.NewBadgerStore(filepath.Join("storage", "test.db"))
+	metadataService := &service.MetadataService{
+		Store: kvs,
+	}
+
+	kv, err := kvstore.NewBadgerStore(filepath.Join("storage", strconv.Itoa(*id)+"test.db"))
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -34,6 +57,7 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	proto.RegisterMetadataServiceServer(grpcServer, metadataService)
 	proto.RegisterDataNodeServiceServer(grpcServer, datanodeService)
 
 	logger.Printf("Server is running on :%d", *kvport)

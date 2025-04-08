@@ -133,3 +133,10 @@ func (c *MetadataClient) GetFileMetadata(key string) ([]metadata.ChunkInfo, erro
 
 	return chunkInfoList, nil
 }
+
+func (c *MetadataClient) Close() {
+	c.cancel()
+	if c.conn != nil {
+		c.conn.Close()
+	}
+}
