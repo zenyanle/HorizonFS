@@ -38,8 +38,8 @@ func NewMetadataClient(serverAddr string) (*MetadataClient, error) {
 	}, nil
 }
 
-func (c *MetadataClient) GetMetadata(key string) (metadata.ChunkInfo, error) {
-	req := &proto.GetMetadataRequest{Key: key}
+func (c *MetadataClient) GetMetadata(index int64, key string) (metadata.ChunkInfo, error) {
+	req := &proto.GetMetadataRequest{Index: index, Key: key}
 
 	res, err := c.client.GetMetadata(c.ctx, req)
 
@@ -61,10 +61,11 @@ func (c *MetadataClient) GetMetadata(key string) (metadata.ChunkInfo, error) {
 	}, nil
 }
 
-func (c *MetadataClient) ProposeSet(key string, chunkInfo metadata.ChunkInfo) error {
+func (c *MetadataClient) ProposeSet(index int64, key string, chunkInfo metadata.ChunkInfo) error {
 
 	req := &proto.ProposeSetRequest{
-		Key: key,
+		Index: index,
+		Key:   key,
 		Value: &proto.ChunkInfo{
 			ChunkId:       chunkInfo.ChunkId,
 			ChunkLocation: chunkInfo.ChunkLocation,
@@ -87,9 +88,9 @@ func (c *MetadataClient) ProposeSet(key string, chunkInfo metadata.ChunkInfo) er
 	return nil
 }
 
-func (c *MetadataClient) ProposeDelete(key string) error {
+func (c *MetadataClient) ProposeDelete(index int64, key string) error {
 
-	req := &proto.ProposeDeleteRequest{Key: key}
+	req := &proto.ProposeDeleteRequest{Index: index, Key: key}
 
 	_, err := c.client.ProposeDelete(c.ctx, req)
 
@@ -102,4 +103,33 @@ func (c *MetadataClient) ProposeDelete(key string) error {
 		}
 	}
 	return nil
+}
+
+func (c *MetadataClient) GetFileMetadata(key string) ([]metadata.ChunkInfo, error) {
+	req := &proto.GetFileMetadataRequest{
+		Key: key,
+	}
+	res, err := c.client.GetFileMetadata(c.ctx, req)
+	if err != nil {
+		// 尝试解析 gRPC 错误状态
+		st, ok := status.FromError(err)
+		if ok {
+			logger.Errorf("GetMetadata 调用失败: code=%s, message='%s'", st.Code(), st.Message())
+			return []metadata.ChunkInfo{}, err
+		} else {
+			logger.Errorf("GetMetadata 调用失败 (非 gRPC 错误): %v", err)
+			return []metadata.ChunkInfo{}, err
+		}
+	}
+	chunkInfoList := make([]metadata.ChunkInfo, len(res.Metadata.Chunks))
+
+	for i, c := range res.Metadata.Chunks {
+		chunkInfoList[i] = metadata.ChunkInfo{
+			ChunkId:       c.ChunkId,
+			ChunkLocation: c.ChunkLocation,
+			ChunkStatus:   c.ChunkStatus,
+		}
+	}
+
+	return chunkInfoList, nil
 }
